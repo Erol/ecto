@@ -38,9 +38,9 @@ defmodule Ecto.Adapters.SQL do
       ## Types
 
       @doc false
-      def autogenerate(:id), do: nil
-      def autogenerate(:embed_id), do: Ecto.UUID.autogenerate()
-      def autogenerate(:binary_id), do: Ecto.UUID.autogenerate()
+      def autogenerate(:id),        do: nil
+      def autogenerate(:embed_id),  do: Ecto.UUID.generate()
+      def autogenerate(:binary_id), do: Ecto.UUID.bingenerate()
 
       @doc false
       defdelegate loaders(primitive, type), to: Ecto.Adapters.SQL
@@ -315,9 +315,10 @@ defmodule Ecto.Adapters.SQL do
 
   @doc false
   def dumpers({:embed, _} = type, _), do: [&dump_embed(type, &1)]
-  def dumpers(:binary,    type),      do: [type, &tag(&1, :binary)]
+  def dumpers(:binary, type),         do: [type, &tag(&1, :binary)]
   def dumpers({:array, inner}, type), do: [type, &tag(&1, {:array, inner})]
   def dumpers(:binary_id, type),      do: [type, Ecto.UUID, &tag(&1, :uuid)]
+  def dumpers(:uuid, type),           do: [type, &tag(&1, :uuid)]
   def dumpers(_, type),               do: [type]
 
   defp load_embed(type, value) do
