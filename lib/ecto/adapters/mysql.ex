@@ -104,12 +104,11 @@ defmodule Ecto.Adapters.MySQL do
 
   ## Custom MySQL types
 
-  def loaders(:map, type), do: [&json_decode/1, type]
-  def loaders(:boolean, type), do: [&bool_decode/1, type]
-  def loaders(:binary_id, type), do: [Ecto.UUID, type]
-  def loaders({:embed, _} = type, _),
-    do: [&json_decode/1, &Ecto.Adapters.SQL.load_embed(type, &1)]
-  def loaders(_primitive, type), do: [type]
+  @doc false
+  def loaders(:map, type),               do: [&json_decode/1, type]
+  def loaders(:boolean, type),           do: [&bool_decode/1, type]
+  def loaders({:embed, _} = base, type), do: [&json_decode/1] ++ super(base, type)
+  def loaders(base, type),               do: super(base, type)
 
   defp bool_decode(<<0>>), do: {:ok, false}
   defp bool_decode(<<1>>), do: {:ok, true}

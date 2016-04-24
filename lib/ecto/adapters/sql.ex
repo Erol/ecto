@@ -43,16 +43,10 @@ defmodule Ecto.Adapters.SQL do
       def autogenerate(:binary_id), do: Ecto.UUID.autogenerate()
 
       @doc false
-      def loaders({:embed, _} = type, _), do: [&Ecto.Adapters.SQL.load_embed(type, &1)]
-      def loaders(:binary_id, type), do: [Ecto.UUID, type]
-      def loaders(_, type), do: [type]
+      defdelegate loaders(primitive, type), to: Ecto.Adapters.SQL
 
       @doc false
-      def dumpers({:embed, _} = type, _), do: [&Ecto.Adapters.SQL.dump_embed(type, &1)]
-      def dumpers(:binary,    type), do: [type, &Ecto.Adapters.SQL.tag(&1, :binary)]
-      def dumpers({:array, inner}, type), do: [type, &Ecto.Adapters.SQL.tag(&1, {:array, inner})]
-      def dumpers(:binary_id, type), do: [type, Ecto.UUID, &Ecto.Adapters.SQL.tag(&1, :uuid)]
-      def dumpers(_, type), do: [type]
+      defdelegate dumpers(primitive, type), to: Ecto.Adapters.SQL
 
       ## Query
 
@@ -314,25 +308,33 @@ defmodule Ecto.Adapters.SQL do
   end
 
   ## Types
+  @doc false
+  def loaders({:embed, _} = type, _), do: [&load_embed(type, &1)]
+  def loaders(:binary_id, type),      do: [Ecto.UUID, type]
+  def loaders(_, type),               do: [type]
 
   @doc false
-  def load_embed(type, value) do
+  def dumpers({:embed, _} = type, _), do: [&dump_embed(type, &1)]
+  def dumpers(:binary,    type),      do: [type, &tag(&1, :binary)]
+  def dumpers({:array, inner}, type), do: [type, &tag(&1, {:array, inner})]
+  def dumpers(:binary_id, type),      do: [type, Ecto.UUID, &tag(&1, :uuid)]
+  def dumpers(_, type),               do: [type]
+
+  defp load_embed(type, value) do
     Ecto.Type.load(type, value, fn
       {:embed, _} = type, value -> load_embed(type, value)
       type, value -> Ecto.Type.cast(type, value)
     end)
   end
 
-  @doc false
-  def dump_embed(type, value) do
+  defp dump_embed(type, value) do
     Ecto.Type.dump(type, value, fn
       {:embed, _} = type, value -> dump_embed(type, value)
       _type, value -> {:ok, value}
     end)
   end
 
-  @doc false
-  def tag(value, {:array, inner}) do
+  defp tag(value, {:array, inner}) do
     case Enum.map_reduce(value, false, &unwrap_tag/2) do
       {value, false} ->
         {:ok, value}
@@ -340,7 +342,7 @@ defmodule Ecto.Adapters.SQL do
         {:ok, %Ecto.Query.Tagged{type: {:array, inner}, value: value}}
     end
   end
-  def tag(value, tag) do
+  defp tag(value, tag) do
     {:ok, %Ecto.Query.Tagged{type: tag, value: value}}
   end
 

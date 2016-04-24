@@ -73,12 +73,9 @@ defmodule Ecto.Adapters.Postgres do
   @behaviour Ecto.Adapter.Structure
 
   ## Support arrays in place of IN
-  def dumpers({:embed, _} = type, _), do: [&Ecto.Adapters.SQL.dump_embed(type, &1)]
-  def dumpers(:binary_id, type), do: [type, Ecto.UUID, &Ecto.Adapters.SQL.tag(&1, :uuid)]
-  def dumpers({:array, inner}, type), do: [type, &Ecto.Adapters.SQL.tag(&1, {:array, inner})]
-  def dumpers(:binary,    type), do: [type, &Ecto.Adapters.SQL.tag(&1, :binary)]
-  def dumpers({:in, inner}, {:in, inner}), do: dumpers({:array, inner}, {:array, inner})
-  def dumpers(_, type), do: [type]
+  @doc false
+  def dumpers({:in, sub}, {:in, sub}), do: super({:array, sub}, {:array, sub})
+  def dumpers(base, type),             do: super(base, type)
 
   ## Storage API
 
